@@ -5,6 +5,8 @@ int[] zoom_levels = {800,400,200,100,50,25};
 int zoom_level = 4;
 int[] location = {400,400};
 boolean grid = true;
+int population;
+int generation;
 PFont f;
 
 
@@ -14,6 +16,10 @@ public void setup(){
   f = createFont("Calibri", 50, true);
   textFont(f, 15);
   matrix[407][401] = 1;
+  matrix[408][401] = 1;
+  matrix[409][401] = 1;
+  matrix[409][400] = 1;
+  matrix[408][399] = 1;
 }
 
 public void draw(){
@@ -47,6 +53,8 @@ void keyPressed() {
   
   if(key == 'h'){location = new int[] {400,400};}
   
+  if(key == 's'){matrix = step(matrix);}
+  
   if(key == '1'){zoom_level++;}
   if(key == '2'){zoom_level--;}
   check_zoom();
@@ -74,11 +82,30 @@ private void check_zoom(){
 }
 
 private int[][] step(int[][] m){
-  int[][] m_new = m;
+  int[][] m_new = new int[1000][1000];
+  int alive_neighbours;
+  
+  for(int i = 0; i < 1000; i++){
+    arrayCopy(m[i],m_new[i]);
+  }
+  
   for(int i = 0; i < 1000; i++){
     for(int j = 0; j < 1000; j++){
-      
+      //calculating alive neighbours, considering edge cases
+      if(i == 0 || i == 999 || j == 0 || j == 999){alive_neighbours = 0;}
+      else{alive_neighbours = m[j-1][i-1] + m[j-1][i] + m[j-1][i+1] + 
+                              m[j][i-1] +               m[j][i+1] + 
+                              m[j+1][i-1] + m[j+1][i] + m[j+1][i+1];}
+      if(m[j][i] == 1){
+        if(alive_neighbours < 2 || alive_neighbours > 3){m_new[j][i] = 0;}
+        else{m_new[j][i] = 1;}
+      }
+      if(m[j][i] == 0){
+        if(alive_neighbours == 3){m_new[j][i] = 1;}
+      }
+      if(j == 407 && i == 400){println(alive_neighbours + ", " + m[j][i] + ", " + m_new[j][i]);}
+      point(407,400);
     }
   }
-  return m;
+  return m_new;
 }
