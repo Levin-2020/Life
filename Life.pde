@@ -33,7 +33,12 @@ String[] protected_names = {"gosper_glider_gun","simkin_glider_gun","still_vs_os
 boolean allowed = true;
 
 PImage matrix_img;
-int first;
+
+int[] fps_list = {5,10,20,40,60,80,100,120};
+int fps = 2; //default is 10 frames per second
+float current_fps;
+float time = millis();
+
 
 
 public void setup(){
@@ -44,15 +49,24 @@ public void setup(){
   textAlign(CENTER,CENTER);
   matrix_img = new PImage(800,800);
   
-  //as soon as it gets crowded it's limited by the computer hardware
-  frameRate(20); 
+  //as soon as it gets crowded it's limited by the computer hardware 
 }
 
 public void draw(){
   //depending on the current scene different function are called
   //thus different scences are drawn
   
+  //calculating current framerate
+  if(frameCount%10==0){
+    float dt = (millis() - time)/10/1000;
+    current_fps = 1/dt;
+    time = millis();
+  }
+  //setting current max framerate
+  frameRate(fps_list[fps]);
+  
   if(scene == 0){
+    fps = 2;
     background(70);
     draw_menu();
   }
@@ -66,14 +80,12 @@ public void draw(){
   
   if(scene == 2){
     editing = false;
-    //background(255);
-    float asdf = millis();
-    asdf = millis();
-    if(first==1){
-    draw_matrix();first++;}
-    println("time wasted drawing: " + (millis()-asdf));
+    //float asdf = millis();
+    //asdf = millis();
+    draw_matrix_img();
+    //println("time wasted drawing: " + (millis()-asdf));
     if(running){matrix = step(matrix);}
-    println("time wasted calculating: " + (millis()-asdf));
+    //println("time wasted calculating: " + (millis()-asdf));
     
     
     draw_minimap(100,120);
@@ -81,6 +93,7 @@ public void draw(){
   }
   
   if(scene == 3){
+    fps = 2;
     background(70);
     draw_info();
   }
@@ -90,6 +103,7 @@ public void draw(){
   }
   
   if(scene == 5){
+    fps = 2;
     background(70);
     draw_info1();
   }
@@ -118,7 +132,6 @@ void mouseClicked(){
       if(mouseX > button_loc[i][0] && mouseX < button_loc[i][0]+button_size[i][0] &&
          mouseY > button_loc[i][1] && mouseY < button_loc[i][1]+button_size[i][1]){
         scene = i+1;
-        first = 1;
       }
     }
   }
@@ -156,6 +169,12 @@ void keyPressed() {
     
     //if not building with, making a generation step
     if(!editing){if(key == 't'){matrix = step(matrix);}}
+    
+    //adjusting the fps
+    if(key == '3'){fps--;}
+    if(key == '4'){fps++;}
+    //checking wheter fps is valid
+    check_fps();
     
     //zooming in and out
     if(key == '1'){zoom_level++;}
@@ -225,24 +244,55 @@ private void draw_menu(){
     }
   }
 }
-/*
+
 private void draw_matrix_img(){
+  //draw the current matrix onto the screen
+  
+  //turns the matrix into a image
   int scale = width/zoom_levels[zoom_level];
+  matrix_img = new PImage(zoom_levels[zoom_level],zoom_levels[zoom_level]);
   for(int i = location[0]; i < location[0]+zoom_levels[zoom_level]; i++){
     for(int j = location[1]; j < location[1]+zoom_levels[zoom_level]; j++){
-      matrix_img.pixels[]
+      int draw_i = i-location[0];
+      int draw_j = j-location[1];
+      if(matrix[j][i] == 1){
+      matrix_img.pixels[draw_j*zoom_levels[zoom_level]+draw_i] = color(0);}
+      else{matrix_img.pixels[draw_j*zoom_levels[zoom_level]+draw_i] = color(255);}
     }
   }
-  matrix_img.updatePixels();
+  //custom scale function without bluring the pixels
+  matrix_img = pixel_scaler(matrix_img,scale);
   image(matrix_img,0,0);
-}*/
-
+  
+  if(grid){
+    stroke(100,130);
+    switch(zoom_level){
+      case 0:
+        strokeWeight(0.05);
+        break;
+      case 1:
+        strokeWeight(0.2);
+        break;
+      case 2:
+        strokeWeight(0.3);
+        break;
+      default:
+        strokeWeight(0.5);
+        break;
+    }
+    for(int i = 0; i < zoom_levels[zoom_level]; i++){
+      line(i*scale,0,i*scale,height);
+      line(0,i*scale,width,i*scale);
+    }
+  }
+}
 
 private void draw_matrix(){
   //draws the current matrix onto the screen
+  //this one is not in use anymore due to the bad performance
   
   //toggle grid by adding/removing a stroke
-  if(grid){stroke(96);}
+  if(grid){stroke(100);}
   else{noStroke();}
   
   //adjusts the stroke weight depending on the zoom level
@@ -300,13 +350,14 @@ private void draw_info(){
   text("- Use ESC to get back to the Main Menu",60,440,800,20);
   text("- Use the arrow keys to move around on the grid",60,460,800,20);
   text("- Use 1 and 2 to zoom in and out respectively",60,480,800,20);
-  text("- Use G to toggle the grid",60,500,800,20);
-  text("- Use H to get back to your initial location",60,520,800,20);
-  text("- Use L to load a build",60,540,800,20);
-  text("- Use P to pause an play, Watch mode only!",60,560,800,20);
-  text("- Use T to execute a single generation step, Watch mode only!",60,580,800,20);
-  text("- Use S to save a build, Build mode only!",60,600,800,20);
-  text("- Use the left and right mouse button to create and destroy a cell respectively, Build mode only!",60,620,800,20);
+  text("- Use 3 and 4 to decrease and increase the max FPS respectively",60,500,800,20);
+  text("- Use G to toggle the grid",60,520,800,20);
+  text("- Use H to get back to your initial location",60,540,800,20);
+  text("- Use L to load a build",60,560,800,20);
+  text("- Use P to pause an play, Watch mode only!",60,580,800,20);
+  text("- Use T to execute a single generation step, Watch mode only!",60,600,800,20);
+  text("- Use S to save a build, Build mode only!",60,620,800,20);
+  text("- Use the left and right mouse button to create and destroy a cell respectively, Build mode only!",60,640,800,20);
   
   textSize(30);
   text("Presets:",30,650,120,50);
@@ -372,6 +423,12 @@ private void check_zoom(){
   if(zoom_level < 0){zoom_level++;} 
 }
 
+private void check_fps(){
+  //to check whether the fps index is valid
+  if(fps >= fps_list.length){fps--;}
+  if(fps < 0){fps++;} 
+}
+
 private int[][] step(int[][] m){
   //generation step
   generation++;
@@ -426,8 +483,10 @@ private void draw_minimap(int size, float opacity){
   
   textSize(12);
   fill(50,opacity*1.2);
-  text("Generation: " + generation, temp, temp-40,100,20);
+  text("Generation: " + generation, temp, temp-35,100,20);
   text("Population: " + population, temp, temp-20,100,20);
+  text("max FPS: " + fps_list[fps], temp, temp-50,100,20);
+  text("current FPS: " + floor(current_fps), temp, temp-65,100,20);
 }
 
 
@@ -515,4 +574,15 @@ private void draw_button(String text, int[] loc, int[] s){
   textSize(20);
   rect(loc[0],loc[1],s[0],s[1]);
   text(text, loc[0],loc[1],s[0],s[1]);
+}
+
+private PImage pixel_scaler(PImage img, int scale){
+  PImage new_img = new PImage(img.width*scale, img.height*scale);
+  for(int j = 0; j < new_img.height; j++){
+    for(int i = 0; i < new_img.width; i++){
+      int[] p = {floor(i/scale),floor(j/scale)};
+      new_img.pixels[j*new_img.width+i] = img.pixels[p[1]*img.width+p[0]];
+    }
+  }
+  return new_img;
 }
