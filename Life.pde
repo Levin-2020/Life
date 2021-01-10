@@ -2,6 +2,7 @@
 - https://processing.org/
 - https://forum.processing.org/one/
 - https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+- https://www.conwaylife.com/wiki/
 */
 
 import javax.swing.*;
@@ -38,6 +39,9 @@ int[] fps_list = {5,10,20,40,60,80,100,120};
 int fps = 2; //default is 10 frames per second
 float current_fps;
 float time = millis();
+
+boolean testing = false;
+int[][] backup_matrix = new int[m_s][m_s];
 
 
 
@@ -156,7 +160,7 @@ void keyPressed() {
   //checking for key presses and calling according function
   
   //return to main menu
-  if (key == ESC){key=0;scene = 0;}
+  if (key == ESC){key=0;scene = 0;matrix = new int[m_s][m_s];}
   
   //build and watch mode
   if(scene == 1 || scene == 2){
@@ -166,9 +170,6 @@ void keyPressed() {
     
     //set location to home coordinates
     if(key == 'h'){location = new int[] {300,300};}
-    
-    //if not building with, making a generation step
-    if(!editing){if(key == 't'){matrix = step(matrix);}}
     
     //adjusting the fps
     if(key == '3'){fps--;}
@@ -198,17 +199,40 @@ void keyPressed() {
     }
   }
   
-  //build mode only, saving
+  //build mode only
   if(scene == 1){
+    //saving a build
     if(key == 's'){
       user_save();
     }
+    //testing a build (without losing it)
+    if(key == 't'){
+      if(!testing){
+        for(int i = 0; i < m_s; i++){
+          arrayCopy(matrix[i],backup_matrix[i]);
+        }
+      }
+      testing = true;
+      matrix = step(matrix);
+    }
+    //reseting after testing
+    if(key == 'z'){
+      testing = false;
+      for(int i = 0; i < m_s; i++){
+        arrayCopy(backup_matrix[i],matrix[i]);
+      }
+    }
   }
   
-  //watch mode only play/pause
+  //watch mode only 
   if(scene == 2){
     if(key == 'p'){
+      //play/pause
       running = !running;
+    }
+    if(key == 't'){
+      //single generation step
+      matrix = step(matrix);
     }
   }
   
@@ -358,12 +382,8 @@ private void draw_info(){
   text("- Use T to execute a single generation step, Watch mode only!",60,600,800,20);
   text("- Use S to save a build, Build mode only!",60,620,800,20);
   text("- Use the left and right mouse button to create and destroy a cell respectively, Build mode only!",60,640,800,20);
+  text("- Use T to execute a single generation step and then Z to reset it to the initial conditions, Build mode only!",60,660,800,20);
   
-  textSize(30);
-  text("Presets:",30,650,120,50);
-  textSize(15);
-  text("- There are a few presets (builds) already available to watch and/or modify.",60,700,800,20);
-  text("- Turn to the next page to see a list of them.",60,720,800,20);
   
   textAlign(CENTER,CENTER);
   
@@ -387,13 +407,15 @@ private void draw_info1(){
   textSize(30);
   text("Presets: ",30,150,300,50);
   textSize(15);
-  text("- still_vs_oscillators",60,200,800,20);
-  text("- glider",60,220,800,20);
-  text("- gosper_glider_gun",60,240,800,20);
-  text("- simkin_glider_gun",60,260,800,20);
-  text("- infinite_growth1",60,280,800,20);
-  text("- infinite_growth2",60,300,800,20);
-  text("- infinite_growth3",60,320,800,20);
+  text("There are a few presets (builds) already available to watch and/or modify. Following is a list of their names:",60,200,800,20);
+  text("- still_vs_oscillators",70,220,800,20);
+  text("- glider",70,240,800,20);
+  text("- gosper_glider_gun",70,260,800,20);
+  text("- simkin_glider_gun",70,280,800,20);
+  text("- infinite_growth1",70,300,800,20);
+  text("- infinite_growth2",70,320,800,20);
+  text("- infinite_growth3",70,340,800,20);
+  text("- spaceships",70,360,800,20);
   
   textAlign(CENTER,CENTER);
   
