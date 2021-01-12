@@ -12,9 +12,9 @@ import static javax.swing.JOptionPane.*;
 int m_s = 1000; //matrix_size
 int padding = 100; //infinite grid illusion
 int[][] matrix = new int[m_s][m_s];
-int cell_size; //0=800x800, 1=400x400, 2=200x200, 3=100x100, 4=50x50, 5=25x25
 int[] zoom_levels = {800,400,200,100,50,25}; //different zoom levels e.g. [2] = 200x200 grid
 int zoom_level = 4; //initial zoom level
+int cell_size; //0=800x800, 1=400x400, 2=200x200, 3=100x100, 4=50x50, 5=25x25
 int[] location = {300,300}; //initial location
 boolean grid = false; //initially the grid is not drawn
 int population = 0;
@@ -30,7 +30,8 @@ int[][] button_size = {{100,50},{100,50},{100,50},{100,50},{100,50},{100,50}};
 
 String[] protected_names = {"gosper_glider_gun","simkin_glider_gun","still_vs_oscillators",
                             "infinite_growth1","infinite_growth2","infinite_growth3", 
-                            "glider","spaceships"};
+                            "glider","spaceships","main_menu","main_menu1","main_menu2",
+                            "main_menu3","main_menu4"};
 boolean allowed = true;
 
 PImage matrix_img;
@@ -42,18 +43,23 @@ float time = millis();
 
 boolean testing = false;
 int[][] backup_matrix = new int[m_s][m_s];
+float[] gaussian_kernel;
 
+PImage color_gradient;
+boolean animation_load = true;
 
 
 public void setup(){
   size(800,800);
-  conway = loadImage("images/conway.jpg");
+  conway = loadImage("images/conway1.jpg");
+  color_gradient = loadImage("images/color_gradient.jpg");
   f = createFont("Calibri", 50, true);
   textFont(f, 20);
   textAlign(CENTER,CENTER);
   matrix_img = new PImage(800,800);
-  
-  //as soon as it gets crowded it's limited by the computer hardware 
+  cell_size = width/zoom_levels[zoom_level];
+  //as soon as it gets crowded it's limited by the computer hardware
+  gaussian_kernel = create_gaussian(1.5,5);
 }
 
 public void draw(){
@@ -70,15 +76,16 @@ public void draw(){
   frameRate(fps_list[fps]);
   
   if(scene == 0){
-    fps = 2;
+    fps = 1;
     background(70);
     draw_menu();
+    draw_menu_animation(50,180,animation_load);
+    animation_load = false;
   }
   
   if(scene == 1){
     editing = true;
-    background(0);
-    draw_matrix();
+    draw_matrix_img();
     draw_minimap(100,120);
   }
   
@@ -113,7 +120,6 @@ public void draw(){
   }
 }
 
-
 void mouseClicked(){
   //checking for cell creations/destructions (in build mode)
   if(scene == 1){
@@ -136,6 +142,7 @@ void mouseClicked(){
       if(mouseX > button_loc[i][0] && mouseX < button_loc[i][0]+button_size[i][0] &&
          mouseY > button_loc[i][1] && mouseY < button_loc[i][1]+button_size[i][1]){
         scene = i+1;
+        matrix = new int[m_s][m_s];
       }
     }
   }
@@ -160,7 +167,10 @@ void keyPressed() {
   //checking for key presses and calling according function
   
   //return to main menu
-  if (key == ESC){key=0;scene = 0;matrix = new int[m_s][m_s];}
+  if (key == ESC){
+    key=0;
+    scene = 0;
+    animation_load = true;}
   
   //build and watch mode
   if(scene == 1 || scene == 2){
@@ -182,6 +192,8 @@ void keyPressed() {
     if(key == '2'){zoom_level--;}
     //checking whether the zoom level is valid
     check_zoom();
+    //updating the cell_size according to new zoom_level
+    cell_size = width/zoom_levels[zoom_level];
     //println("zoom level: " + zoom_level);
     
     //adjusting location with arrow keys
@@ -245,9 +257,6 @@ private void draw_menu(){
   textSize(60);
   text("John Conway's Game of Life",0,0,800,150);
   
-  //main menu image
-  image(conway,50,200,conway.width/2,conway.height/2);
-  
   //buttons
   //build
   draw_button("Build", button_loc[0], button_size[0]);
@@ -269,11 +278,8 @@ private void draw_menu(){
   }
 }
 
-private void draw_matrix_img(){
-  //draw the current matrix onto the screen
-  
-  //turns the matrix into a image
-  int scale = width/zoom_levels[zoom_level];
+private PImage update_matrix_img(){
+  //updates the matrix_img to fit the current matrix
   matrix_img = new PImage(zoom_levels[zoom_level],zoom_levels[zoom_level]);
   for(int i = location[0]; i < location[0]+zoom_levels[zoom_level]; i++){
     for(int j = location[1]; j < location[1]+zoom_levels[zoom_level]; j++){
@@ -284,6 +290,18 @@ private void draw_matrix_img(){
       else{matrix_img.pixels[draw_j*zoom_levels[zoom_level]+draw_i] = color(255);}
     }
   }
+  return matrix_img;
+}
+
+private void draw_matrix_img(){
+  //draw the current matrix onto the screen
+  
+  //turns the matrix into a image
+  int scale = width/zoom_levels[zoom_level];
+  
+  //updates matrix_img
+  matrix_img = update_matrix_img();
+  
   //custom scale function without bluring the pixels
   matrix_img = pixel_scaler(matrix_img,scale);
   image(matrix_img,0,0);
@@ -307,43 +325,6 @@ private void draw_matrix_img(){
     for(int i = 0; i < zoom_levels[zoom_level]; i++){
       line(i*scale,0,i*scale,height);
       line(0,i*scale,width,i*scale);
-    }
-  }
-}
-
-private void draw_matrix(){
-  //draws the current matrix onto the screen
-  //this one is not in use anymore due to the bad performance
-  
-  //toggle grid by adding/removing a stroke
-  if(grid){stroke(100);}
-  else{noStroke();}
-  
-  //adjusts the stroke weight depending on the zoom level
-  switch(zoom_level){
-    case 0:
-      strokeWeight(0.05);
-      break;
-    case 1:
-      strokeWeight(0.2);
-      break;
-    case 2:
-      strokeWeight(0.3);
-      break;
-    default:
-      strokeWeight(0.5);
-      break;
-  }
-  
-  //every cell is being drawn individually with rect()
-  cell_size = width/zoom_levels[zoom_level];
-  for(int i = location[0]; i < location[0]+zoom_levels[zoom_level]; i++){
-    for(int j = location[1]; j < location[1]+zoom_levels[zoom_level]; j++){
-      if(matrix[j][i] == 1){fill(0);}
-      else{fill(255);}
-      int i_draw = i-(location[0]);
-      int j_draw = j-(location[1]);
-      rect(i_draw*cell_size,j_draw*cell_size,cell_size,cell_size);
     }
   }
 }
@@ -464,7 +445,7 @@ private int[][] step(int[][] m){
     arrayCopy(m[i],m_new[i]);
   }
   
-  
+  cell_size = width/zoom_levels[zoom_level];
   for(int i = 0; i < m_s; i++){
     for(int j = 0; j < m_s; j++){
       //calculating alive neighbours, considering edge cases
@@ -607,4 +588,70 @@ private PImage pixel_scaler(PImage img, int scale){
     }
   }
   return new_img;
+}
+
+private PImage custom_filter(PImage original){
+  //applies the gaussian_kernel on a given image
+  PImage img = original.copy();
+  for (int y = 2; y < img.height-2; y++) {
+    for (int x = 2; x < img.width-2; x++) {
+      int w = img.width;
+      
+      //Pixelnummer im pixels-Array mit Koordinaten x,y
+      int pNum = x+w*y;
+      
+      int[] pix = {pNum-2-2*w, pNum-1-2*w, pNum-2*w, pNum-2*w+1, pNum-2*w+2,
+                   pNum-2-w,   pNum-1-w,   pNum-w,   pNum-w+1,   pNum-w+2,
+                   pNum-2,     pNum-1,     pNum,     pNum+1,     pNum+2, 
+                   pNum-2+w,   pNum-1+w,   pNum+w,   pNum+w+1,   pNum+w+2, 
+                   pNum-2+2*w, pNum-1+2*w, pNum+2*w, pNum+2*w+1, pNum+2*w+2};
+      
+      int r = 0;
+      int g = 0;
+      int b = 0;
+      
+      //Filter auf Nachbarpixel anwenden (jeden Farbkanal einzeln)
+      for (int i = 0; i < 25; i++){
+        r += red(original.pixels[pix[i]])*gaussian_kernel[i];
+        g += green(original.pixels[pix[i]])*gaussian_kernel[i];
+        b += blue(original.pixels[pix[i]])*gaussian_kernel[i];
+      }
+      
+      //Farbkanäle wieder zusammenführen
+      img.pixels[y*w+x] = color(r,g,b);
+    }
+  }
+  return img;
+}
+
+private float[] create_gaussian(float sigma, int size){
+  //creates a 2d gaussian kernel
+  float[] g = new float[size*size];
+  int center = floor(size/2);
+  for(int y = 0; y < size; y++){
+    for(int x = 0; x < size; x++){
+      g[y*size+x] = (1/(TWO_PI*pow(sigma,2))) * exp(-(pow(x-center,2)+pow(y-center,2))/(2*pow(sigma,2)));
+    }
+  }
+  return g;
+}
+
+
+private void draw_menu_animation(int x, int y, boolean first){
+  if(first){
+  matrix = m_load("main_menu4.json");
+  location = new int[] {300,300};
+  zoom_level = 4;
+  }
+  matrix_img = update_matrix_img();
+  matrix_img = pixel_scaler(matrix_img,10);
+  matrix_img = custom_filter(matrix_img);
+  matrix_img.mask(conway);
+  image(matrix_img,x,y);
+  noFill();
+  stroke(40);
+  strokeWeight(10);
+  rect(x+2,y+2,498,498);
+  strokeWeight(1);
+  matrix = step(matrix);
 }
