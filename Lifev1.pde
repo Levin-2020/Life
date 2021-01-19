@@ -5,7 +5,7 @@
 - https://www.conwaylife.com/wiki/
 */
 
-//font, button color, head
+//for user inputs
 import javax.swing.*;
 import static javax.swing.JOptionPane.*;
 
@@ -21,7 +21,8 @@ int[] location = {300,300}; //initial location
 boolean grid = false; //initially the grid is not drawn
 int population = 0;
 int generation = 0;
-PFont f;
+PFont calibri;
+PFont title_font;
 int scene = 0; //0=menu, 1=build, 2=watch, 3=info, 4=exit, 5=info1
 boolean editing = false;
 boolean running = false;
@@ -65,8 +66,9 @@ public void setup(){
   //loading images, setting variables, creating font, ...
   size(800,800);
   conway = loadImage("images/conway1.jpg");
-  f = createFont("Calibri", 50, true);
-  textFont(f, 20);
+  calibri = createFont("Calibri", 50, true);
+  title_font = createFont("Georgia",50);
+  textFont(calibri, 20);
   textAlign(CENTER,CENTER);
   matrix_img = new PImage(800,800);
   cell_size = width/zoom_levels[zoom_level];
@@ -240,6 +242,9 @@ void keyPressed() {
       //single generation step
       matrix = step(matrix);
     }
+    if(key == 'r'){
+      matrix = random_state_generator(0.5);
+    }
   }
   
 }
@@ -250,8 +255,9 @@ private void draw_menu(){
   background(70);
   //title
   fill(255);
-  textSize(60);
+  textFont(title_font, 60);
   text("John Conway's Game of Life",0,0,800,150);
+  textFont(calibri);
   
   //buttons
   //build
@@ -325,10 +331,10 @@ void draw_info(){
   background(70);
   //simply a lot of text on the info screen
   fill(255);
-  textSize(60);
+  textFont(title_font,60);
   text("John Conway's Game of Life",0,0,800,150);
   textAlign(LEFT,CENTER);
-  textSize(30);
+  textFont(calibri,30);
   text("Rules: ",30,150,100,50);
   textSize(15);
   text("The universe of the Game of Life is an infinite (here 800x800), two-dimensional orthogonal grid of square cells, \neach of "+
@@ -371,10 +377,10 @@ private void draw_info1(){
   background(70);
   //just a lot of text on the info1 screen
   fill(255);
-  textSize(60);
+  textFont(title_font,60);
   text("John Conway's Game of Life",0,0,800,150);
   textAlign(LEFT,CENTER);
-  textSize(30);
+  textFont(calibri,30);
   text("Presets: ",30,150,300,50);
   textSize(15);
   text("There are a few presets (builds) already available to watch and/or modify. Following is a list of their names:",60,200,800,20);
@@ -509,4 +515,16 @@ private void draw_menu_animation(int x, int y, boolean first){
   rect(x+2,y+2,498,498);
   strokeWeight(1);
   matrix = step(matrix);
+}
+
+//------------------------------------------------------------------------------------------------------------
+
+private int[][] random_state_generator(float p){
+  int[][] m = new int[m_s][m_s];
+  for(int j = 0; j < m_s; j++){
+    for(int i = 0; i < m_s; i++){
+      if(random(1) < p){m[j][i] = 1;}
+    }
+  }
+  return m;
 }
