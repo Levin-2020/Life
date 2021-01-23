@@ -38,7 +38,7 @@ int[][] button_size = {{100,50}};
 String[] protected_names = {"gosper_glider_gun","simkin_glider_gun","still_vs_oscillators",
                             "infinite_growth1","infinite_growth2","infinite_growth3", 
                             "glider","spaceships","main_menu","main_menu1","main_menu2",
-                            "main_menu3","main_menu4","main_menu5"};
+                            "main_menu3","main_menu4","main_menu5","random_to_oscillator"};
 boolean allowed = true;
 
 
@@ -48,7 +48,7 @@ int fps = 2; //default is 10 frames per second
 float current_fps;
 float time = millis();
 
-//testing in build mode 't'->'z'
+//testing in build mode 't' to step -> 'z' to reset
 boolean testing = false;
 int[][] backup_matrix = new int[m_s][m_s];
 
@@ -71,7 +71,7 @@ button previouspage_button;
 public void setup(){
   //loading images, setting variables, creating font, ...
   size(800,800);
-  conway = loadImage("images/conway1.jpg");
+  conway = loadImage("data/images/conway1.jpg");
   calibri = createFont("Calibri", 50, true);
   title_font = createFont("Georgia",50);
   textFont(calibri, 20);
@@ -111,6 +111,7 @@ public void draw(){
     draw_menu();
     draw_menu_animation(50,180,animation_load);
     animation_load = false;
+    testing = false;
   }
   
   if(scene == 1){
@@ -407,6 +408,7 @@ private void draw_info1(){
   text("- infinite_growth2",70,320,800,20);
   text("- infinite_growth3",70,340,800,20);
   text("- spaceships",70,360,800,20);
+  text("- random_to_oscillator",70,380,800,20);
   
   textAlign(CENTER,CENTER);
 
