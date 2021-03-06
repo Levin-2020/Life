@@ -7,6 +7,7 @@ Features:
 - minimap
 - adjustable framrate
 - generation and population counter
+- and many more...
 
 
 ![Here should be a gif](/presentation/mainmenu.gif)
